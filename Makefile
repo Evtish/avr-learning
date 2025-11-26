@@ -1,23 +1,20 @@
-# you should add a hard link of this file to the directory you want to build
-# or find a smarter way to build each directory separately
-
 PROGRAM_NAME := main
 
 SRC_DIR := src
 INC_DIR := inc
 BUILD_DIR := build
-
-USB_PORT := /dev/ttyUSB0
-
-C_FLAGS := -DF_CPU=16000000UL -mmcu=atmega328p -Wall -Os -I ./$(INC_DIR)
-OBJCOPY_FLAGS := -R .eeprom -O ihex
-AVRDUDE_FLAGS := -c arduino -p m328p -P $(USB_PORT)
+USB_PORT := /dev/ttyUSB1
 
 SOURCE_FILES := $(wildcard $(SRC_DIR)/*.c)
 OBJECT_FILES := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SOURCE_FILES))
 DEPENDENCY_FILES := $(OBJECT_FILES:.o=.d)
 ELF_FILE := $(BUILD_DIR)/$(PROGRAM_NAME).elf
 HEX_FILE := $(BUILD_DIR)/$(PROGRAM_NAME).hex
+
+CC := avr-gcc
+CFLAGS := -DF_CPU=16000000UL -mmcu=atmega328p -MMD -MP -Wall -Wextra -pedantic -Os -I ./$(INC_DIR)
+OBJCOPY_FLAGS := -R .eeprom -O ihex
+AVRDUDE_FLAGS := -c arduino -p m328p -P $(USB_PORT)
 
 all: $(HEX_FILE)
 
@@ -30,16 +27,16 @@ $(OBJECT_FILES): | $(BUILD_DIR)
 
 # compile
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
-	avr-gcc -c -MMD -MP $(C_FLAGS) $< -o $@
+	$(CC) -c $(CFLAGS) $< -o $@
 
 -include $(DEPENDENCY_FILES)
 
-# linking
+# link
 $(ELF_FILE): $(OBJECT_FILES)
-	avr-gcc $^ $(C_FLAGS) -o $@
+	$(CC) $^ $(CFLAGS) -o $@
 
 # create .hex file from .elf
-$(BUILD_DIR)/$(PROGRAM_NAME).hex: $(ELF_FILE)
+$(HEX_FILE): $(ELF_FILE)
 	avr-objcopy $(OBJCOPY_FLAGS) $^ $@
 
 # flash MCU

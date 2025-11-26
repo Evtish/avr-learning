@@ -3,8 +3,8 @@
 
 #define LED_PIN PORTB1
 
-#define TIMER1_PRESCALER_PWR_INDX 8  // 2 ** TIMER1_PRESCALER_PWR_INDX is timer1 prescaler
-#define OCR1A_VAL (F_CPU >> TIMER1_PRESCALER_PWR_INDX)  // actually this equals F_CPU / 2 ** TIMER1_PRESCALER_PWR_INDX
+#define TIMER1_PRESCALER_PWR_INDX 8  // 2 ^ TIMER1_PRESCALER_PWR_INDX is timer1 prescaler
+#define OCR1A_VAL (F_CPU >> TIMER1_PRESCALER_PWR_INDX)  // actually this equals F_CPU / 2 ^ TIMER1_PRESCALER_PWR_INDX
 
 // toggle LED if TIMER1 equals OCR1A value
 // ISR(TIMER1_COMPA_vect) {
@@ -38,5 +38,5 @@ int main(void) {
     return 0;
 }
 
-// T = 2 ** timer_bit_capacity * timer_prescaler / freq
-// timer_prescaler = freq * T / 2 ** timer_bit_capacity
+// T = 2 ^ timer_bit_capacity * timer_prescaler / freq
+// timer_prescaler = freq * T / 2 ^ timer_bit_capacity
