@@ -1,5 +1,5 @@
 #include <avr/io.h>
-#include <avr/interrupt.h>
+//#include <avr/interrupt.h>
 #include <util/delay.h>
 
 #include "twi.h"
@@ -13,7 +13,7 @@
 #define SCL_FREQUENCY_HZ	400000UL
 #define TWBR_VALUE			((F_CPU / SCL_FREQUENCY_HZ - 16) / 2)
 
-#define SLAVE_ADDRESS	0b1101000 // DS3231 RTC
+#define SLAVE_ADDRESS	0b0111100 // SSD1306 (also may be 0b0111101, check the DC pin level)
 #define SLA_W			(SLAVE_ADDRESS << 1)
 #define SLA_R			((SLAVE_ADDRESS << 1) | 1)
 
@@ -29,7 +29,6 @@
 #define TWI_AMOUNT_OF_RESET_CYCLES			100
 #define TWI_AMOUNT_OF_TRANSMISSION_ATTEMPTS 100
 #define TWI_DELAY_US						5
-#define TWI_FAILURE							0x01
 
 // inspired by this: https://github.com/Naguissa/uRTCLib/issues/42#issue-2229505594
 // fix unsynchronized TWI bus (TWI_SUCCESS - success, TWI_FAILURE - failure), you need to manually enable TWI after calling the function
@@ -95,7 +94,7 @@ static void twi_wait(void) { while (!(TWCR & (1 << TWINT))); }
 /*returns the exit code:
 TWI_SUCCESS:	successfully transmitted
 other:			error*/
-uint8_t twi_receive_bytes(uint8_t *buf, const uint8_t start_address, const uint8_t amount_of_bytes) {
+uint8_t twi_receive_bytes(uint8_t *buf, const size_t amount_of_bytes) {
 	if (amount_of_bytes == 0) return TWI_SUCCESS; // there is nothing to receive
 
 	uint8_t status_code = 0;
@@ -110,33 +109,33 @@ uint8_t twi_receive_bytes(uint8_t *buf, const uint8_t start_address, const uint8
 	}
 
 	// transmit SLA+W
-	TWDR = SLA_W;
-	twi_clear();
-	twi_wait();
-	if (TWSR_STATUS_CODE != CODE_SLA_W_ACK) {
-		status_code = TWSR_STATUS_CODE;
-		twi_stop();
-		return status_code;
-	}
+	//TWDR = SLA_W;
+	//twi_clear();
+	//twi_wait();
+	//if (TWSR_STATUS_CODE != CODE_SLA_W_ACK) {
+	//	status_code = TWSR_STATUS_CODE;
+	//	twi_stop();
+	//	return status_code;
+	//}
 
 	// transmit WORD ADDRESS
-	TWDR = start_address;
-	twi_clear();
-	twi_wait();
-	if (TWSR_STATUS_CODE != CODE_TRANSMIT_DATA_ACK) {
-		status_code = TWSR_STATUS_CODE;
-		twi_stop();
-		return status_code;
-	}
+	//TWDR = start_address;
+	//twi_clear();
+	//twi_wait();
+	//if (TWSR_STATUS_CODE != CODE_TRANSMIT_DATA_ACK) {
+	//	status_code = TWSR_STATUS_CODE;
+	//	twi_stop();
+	//	return status_code;
+	//}
 
 	// transmit REPEATED START
-	twi_start();
-	twi_wait();
-	if (TWSR_STATUS_CODE != CODE_REPEATED_START) {
-		status_code = TWSR_STATUS_CODE;
-		twi_stop();
-		return status_code;
-	}
+	//twi_start();
+	//twi_wait();
+	//if (TWSR_STATUS_CODE != CODE_REPEATED_START) {
+	//	status_code = TWSR_STATUS_CODE;
+	//	twi_stop();
+	//	return status_code;
+	//}
 
 	// transmit SLA+R
 	TWDR = SLA_R;
@@ -149,7 +148,7 @@ uint8_t twi_receive_bytes(uint8_t *buf, const uint8_t start_address, const uint8
 	}
 	
 	// receive DATA
-	for (uint8_t i = 0; i < amount_of_bytes; i++) {
+	for (size_t i = 0; i < amount_of_bytes; i++) {
 		if (i < amount_of_bytes - 1)
 			twi_enable_ack(); // enable returning of ACK if this is not the last byte
 		else
@@ -173,7 +172,7 @@ uint8_t twi_receive_bytes(uint8_t *buf, const uint8_t start_address, const uint8
 /*returns the exit code:
 TWI_SUCCESS:	successfully transmitted
 other:			error*/
-uint8_t twi_transmit_bytes(const uint8_t *buf, const uint8_t start_address, const uint8_t amount_of_bytes) {
+uint8_t twi_transmit_bytes(const uint8_t *buf, const size_t amount_of_bytes) {
 	if (amount_of_bytes == 0) return TWI_SUCCESS; // there is nothing to transmit
 
 	uint8_t status_code = 0;
@@ -181,35 +180,35 @@ uint8_t twi_transmit_bytes(const uint8_t *buf, const uint8_t start_address, cons
 	// transmit START
 	twi_start();
 	twi_wait();
-
 	if (TWSR_STATUS_CODE != CODE_START) {
 		status_code = TWSR_STATUS_CODE;
 		twi_stop();
 		return status_code;
 	}
+
 	// transmit SLA+W
 	TWDR = SLA_W;
 	twi_clear();
 	twi_wait();
-
 	if (TWSR_STATUS_CODE != CODE_SLA_W_ACK) {
 		status_code = TWSR_STATUS_CODE;
 		twi_stop();
 		return status_code;
 	}
-	// transmit WORD ADDRESS
-	TWDR = start_address;
-	twi_clear();
-	twi_wait();
 
-	if (TWSR_STATUS_CODE != CODE_TRANSMIT_DATA_ACK) {
-		status_code = TWSR_STATUS_CODE;
-		twi_stop();
-		return status_code;
-	}
+	// transmit WORD ADDRESS
+	//TWDR = start_address;
+	//twi_clear();
+	//twi_wait();
+	//if (TWSR_STATUS_CODE != CODE_TRANSMIT_DATA_ACK) {
+	//	status_code = TWSR_STATUS_CODE;
+	//	twi_stop();
+	//	return status_code;
+	//}
 
 	// transmit DATA
-	for (uint8_t i = 0, attempts = 0; i < amount_of_bytes;) {
+	uint8_t attempts = 0;
+	for (size_t i = 0; i < amount_of_bytes;) {
 		TWDR = buf[i];
 		twi_clear();
 		twi_wait();
@@ -226,6 +225,7 @@ uint8_t twi_transmit_bytes(const uint8_t *buf, const uint8_t start_address, cons
 					attempts++;
 					break;
 				}
+				//goto default;
 				__attribute__ ((fallthrough)); // to disable -Wimplicit-fallthrough warning
 			// all other states are treated as error
 			default:
