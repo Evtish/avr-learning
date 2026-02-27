@@ -12,7 +12,7 @@ EXEC_FILE := $(BUILD_DIR)/$(PROGRAM_NAME)
 HEX_FILE := $(BUILD_DIR)/$(PROGRAM_NAME).hex
 
 CC := avr-gcc
-CFLAGS := -DF_CPU=16000000UL -mmcu=atmega328p -ggdb -MMD -MP -Wall -Wextra -pedantic -Os -I$(INC_DIR) -save-temps=obj
+CFLAGS := -DF_CPU=16000000UL -mmcu=atmega328p -ggdb -MMD -MP -Wall -Wextra -std=c99 -pedantic -Os -I$(INC_DIR) -save-temps=obj
 LDFLAGS := -ggdb -mmcu=atmega328p
 OBJCOPY_FLAGS := -R .eeprom -O ihex
 AVRDUDE_FLAGS := -c arduino -p m328p -P $(USB_PORT)
